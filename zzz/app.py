@@ -12,7 +12,7 @@ from io import BytesIO
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns  # Comentado temporalmente
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
