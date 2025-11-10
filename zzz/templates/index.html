@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Water Potability - Predictor IA</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <main class="container">
+      <div class="header">
+        <p class="author">Desarrollado por: Ernestro Garcia Valenzuela</p>
+      </div>
+      <h1>Water Potability Predictor</h1>
+      <p class="subtitle">Predicción de potabilidad del agua usando Machine Learning</p>
+
+      {% if result %}
+        <div class="card result">
+          <h2>Resultado: <span class="badge {{ 'potable' if result == 'Potable' else 'no-potable' }}">{{ result }}</span></h2>
+          <p>{{ details }}</p>
+          
+          {% if confidence_plot %}
+          <div class="chart-container">
+            <h3>Confianza de la Predicción</h3>
+            <img src="data:image/png;base64,{{ confidence_plot }}" alt="Gráfico de Confianza" class="chart">
+          </div>
+          {% endif %}
+        </div>
+      {% elif details %}
+        <div class="card error">
+          <p>{{ details }}</p>
+        </div>
+      {% endif %}
+
+      <div class="actions-top">
+        <button type="button" id="randomBtn" class="btn-secondary">Datos Aleatorios</button>
+        <button type="button" id="clearBtn" class="btn-secondary">Limpiar</button>
+      </div>
+
+      <form method="post" class="grid" id="predictionForm">
+        {% for f in features %}
+          <div class="field-group">
+            <label for="{{f}}">{{f}}</label>
+            <input id="{{f}}" name="{{f}}" type="number" step="any" value="{{ values[f] }}" 
+                   placeholder="Ej: {% if f == 'ph' %}7.0{% elif f == 'Hardness' %}200{% elif f == 'Solids' %}20000{% else %}10{% endif %}"
+                   min="{% if feature_ranges and f in feature_ranges %}{{ feature_ranges[f][0] }}{% endif %}"
+                   max="{% if feature_ranges and f in feature_ranges %}{{ feature_ranges[f][1] }}{% endif %}">
+            <small class="range-hint">
+              {% if feature_ranges and f in feature_ranges %}
+                Rango: {{ feature_ranges[f][0] }} - {{ feature_ranges[f][1] }}
+              {% endif %}
+            </small>
+          </div>
+        {% endfor %}
+
+        <div class="actions">
+          <button type="submit" class="btn-primary">Predecir</button>
+        </div>
+      </form>
+
+      {% if distribution_plot %}
+      <div class="card">
+        <h3>Distribución de Características en el Dataset</h3>
+        <div class="chart-container">
+          <img src="data:image/png;base64,{{ distribution_plot }}" alt="Distribución de Features" class="chart-large">
+        </div>
+      </div>
+      {% endif %}
+
+    </main>
+
+    <script>
+      // Botón datos aleatorios
+      document.getElementById('randomBtn').addEventListener('click', async function() {
+        try {
+          const response = await fetch('/api/random-sample');
+          const data = await response.json();
+          
+          for (const [feature, value] of Object.entries(data)) {
+            const input = document.getElementById(feature);
+            if (input) {
+              input.value = value;
+            }
+          }
+        } catch (error) {
+          console.error('Error cargando datos aleatorios:', error);
+          alert('Error al generar datos aleatorios');
+        }
+      });
+
+      // Botón limpiar
+      document.getElementById('clearBtn').addEventListener('click', function() {
+        const form = document.getElementById('predictionForm');
+        const inputs = form.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => input.value = '');
+      });
+
+      // Validación en tiempo real
+      document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('input', function() {
+          const value = parseFloat(this.value);
+          const min = parseFloat(this.min);
+          const max = parseFloat(this.max);
+          
+          if (value < min || value > max) {
+            this.style.borderColor = '#ff6b6b';
+          } else {
+            this.style.borderColor = '#4ecdc4';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
